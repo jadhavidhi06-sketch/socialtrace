@@ -1,37 +1,47 @@
 import os
+import json
 from datetime import datetime
+
 
 def save_report(username, results):
 
-    os.makedirs("output", exist_ok=True)
+    folder = f"output/{username}"
 
-    filename = f"output/{username}_report.txt"
+    os.makedirs(folder, exist_ok=True)
 
-    with open(filename,"w") as f:
+    txt_path = f"{folder}/report.txt"
+    json_path = f"{folder}/report.json"
 
-        f.write("SocialTrace OSINT Report\n")
-        f.write("="*40+"\n")
-        f.write(f"Username: {username}\n")
-        f.write(f"Scan Date: {datetime.now()}\n\n")
+    found = [r for r in results if r["status"] == "FOUND"]
 
-        for r in results:
-                
-            if r["status"]=="FOUND":
+    with open(txt_path, "w") as f:
 
-                f.write(f"Platform: {r['site']}\n")
-                f.write(f"Profile: {r['url']}\n")
+        f.write("SOCIALTRACE OSINT REPORT\n")
+        f.write("=========================\n\n")
 
-                data = r.get("data",{})
+        f.write(f"Target Username : {username}\n")
+        f.write(f"Profiles Found  : {len(found)}\n")
+        f.write(f"Scan Date       : {datetime.now()}\n\n")
 
-                if data.get("name"):
-                    f.write(f"Name: {data['name']}\n")
+        for r in found:
 
-                if data.get("bio"):
-                    f.write(f"Bio: {data['bio']}\n")
+            f.write(f"Platform : {r['site']}\n")
+            f.write(f"URL      : {r['url']}\n")
 
-                if data.get("image"):
-                    f.write(f"Profile Image: {data['image']}\n")
+            data = r.get("data", {})
 
-                f.write("\n")    
+            if data.get("name"):
+                f.write(f"Name     : {data['name']}\n")
 
-    print(f"\nReport saved: {filename}")
+            if data.get("bio"):
+                f.write(f"Bio      : {data['bio']}\n")
+
+            if data.get("image"):
+                f.write(f"Image    : {data['image']}\n")
+
+            f.write("\n")
+
+    with open(json_path, "w") as jf:
+        json.dump(results, jf, indent=4)
+
+    print(f"\nReport saved in: {folder}")
