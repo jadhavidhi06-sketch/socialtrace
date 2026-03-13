@@ -2,34 +2,29 @@ import requests
 from tqdm import tqdm
 from modules.profile_scraper import scrape_profile
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+}
 
-# Common error messages used by websites
-INVALID_PATTERNS = [
-    "user not found",
-    "page not found",
-    "profile not found",
-    "this page isn't available",
-    "account suspended",
+ERROR_KEYWORDS = [
+    "not found",
+    "page doesn't exist",
     "doesn't exist",
-    "not available",
+    "user not found",
+    "sorry, this page",
     "404",
-    "error",
+    "error"
 ]
 
 
-def is_valid_profile(response, username):
-    """
-    Verify if the profile is real
-    """
+def valid_profile(response, username):
 
     html = response.text.lower()
 
-    # Detect error pages
-    for pattern in INVALID_PATTERNS:
-        if pattern in html:
+    for word in ERROR_KEYWORDS:
+        if word in html:
             return False
 
-    # Username should appear somewhere
     if username.lower() not in html:
         return False
 
@@ -40,45 +35,24 @@ def scan_username(username, sites):
 
     results = []
 
-    headers = {
-        "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    }
-
     for site in tqdm(sites, desc="Scanning Platforms"):
 
         url = site["url"].format(username)
 
         try:
 
-            r = requests.get(
-                url,
-                headers=headers,
-                timeout=10,
-                allow_redirects=True
-            )
+            r = requests.get(url, headers=HEADERS, timeout=8)
 
-            # Only continue if page loads
-            if r.status_code == 200:
+            if r.status_code == 200 and valid_profile(r, username):
 
-                if is_valid_profile(r, username):
+                data = scrape_profile(url)
 
-                    profile_info = scrape_profile(url)
-
-                    results.append({
-                        "site": site["name"],
-                        "url": url,
-                        "status": "FOUND",
-                        "data": profile_info
-                    })
-
-                else:
-
-                    results.append({
-                        "site": site["name"],
-                        "url": url,
-                        "status": "NOT FOUND"
-                    })
+                results.append({
+                    "site": site["name"],
+                    "url": url,
+                    "status": "FOUND",
+                    "data": data
+                })
 
             else:
 
