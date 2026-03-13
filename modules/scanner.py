@@ -1,35 +1,10 @@
 import requests
 from tqdm import tqdm
-from modules.profile_scraper import scrape_profile
+from modules.scraper import extract_profile_info
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    "User-Agent": "Mozilla/5.0"
 }
-
-ERROR_KEYWORDS = [
-    "not found",
-    "page doesn't exist",
-    "doesn't exist",
-    "user not found",
-    "sorry, this page",
-    "404",
-    "error"
-]
-
-
-def valid_profile(response, username):
-
-    html = response.text.lower()
-
-    for word in ERROR_KEYWORDS:
-        if word in html:
-            return False
-
-    if username.lower() not in html:
-        return False
-
-    return True
-
 
 def scan_username(username, sites):
 
@@ -43,15 +18,15 @@ def scan_username(username, sites):
 
             r = requests.get(url, headers=HEADERS, timeout=8)
 
-            if r.status_code == 200 and valid_profile(r, username):
+            if r.status_code == 200:
 
-                data = scrape_profile(url)
+                profile_data = extract_profile_info(url)
 
                 results.append({
                     "site": site["name"],
                     "url": url,
                     "status": "FOUND",
-                    "data": data
+                    "data": profile_data
                 })
 
             else:
