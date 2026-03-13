@@ -1,42 +1,41 @@
 import requests
 from bs4 import BeautifulSoup
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0"
+}
+
+
 def scrape_profile(url):
 
-    profile_data = {
+    data = {
         "name": None,
         "bio": None,
-        "image": None,
-        "title": None
+        "image": None
     }
 
     try:
 
-        r = requests.get(url,timeout=8)
+        r = requests.get(url, headers=HEADERS, timeout=8)
 
-        soup = BeautifulSoup(r.text,"html.parser")
+        soup = BeautifulSoup(r.text, "html.parser")
 
-        # Page Title
         title = soup.find("title")
+
         if title:
-            profile_data["title"] = title.text.strip()
+            data["name"] = title.text.strip()
 
-        # Meta Description
-        desc = soup.find("meta",{"name":"description"})
+        desc = soup.find("meta", attrs={"name": "description"})
+
         if desc:
-            profile_data["bio"] = desc.get("content")
+            data["bio"] = desc.get("content")
 
-        # OpenGraph Title
-        og_title = soup.find("meta",{"property":"og:title"})
-        if og_title:
-            profile_data["name"] = og_title.get("content")
+        img = soup.find("img")
 
-        # Profile Image
-        img = soup.find("meta",{"property":"og:image"})
         if img:
-            profile_data["image"] = img.get("content")
+            data["image"] = img.get("src")
 
     except:
         pass
 
-    return profile_data
+    return data
